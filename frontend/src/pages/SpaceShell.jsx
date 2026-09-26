@@ -43,7 +43,6 @@ export const capRoute = (c) => (c.kind === 'records' ? `m/${c.key}` : c.kind ===
 export default function SpaceShell() {
   const { spaceId } = useParams();
   const nav = useNavigate();
-  const loc = useLocation();
   const user = useApp((s) => s.user);
   const { data: space, isLoading, error, refetch } = useQuery({ queryKey: ['space', spaceId], queryFn: () => api.get(`/spaces/${spaceId}`).then((r) => r.data) });
   const { data: spaces = [] } = useQuery({ queryKey: ['spaces'], queryFn: () => api.get('/spaces').then((r) => r.data) });
