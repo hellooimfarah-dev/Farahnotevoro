@@ -78,9 +78,9 @@ export default function SpaceShell() {
 
           {/* Nav */}
           <nav className="flex-1 overflow-auto nv-scroll px-2 pt-1.5 pb-2" data-testid="space-nav">
-            {NAV_ITEMS.map((item) => {
+            {NAV_ITEMS.map((item, index) => {
               if (item.separator) {
-                return <div key={`sep-${Math.random()}`} className="h-4" />;
+                return <div key={`separator-${index}`} className="h-4" />;
               }
               if (item.teamOnly && !isTeam) return null;
               if (item.placeholder) {
