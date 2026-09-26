@@ -121,6 +121,7 @@ export default function App() {
               <Route path="my-work" element={<MyWork />} />
               <Route path="pages" element={<Pages />} />
               <Route path="pages/:pageId" element={<Pages />} />
+              <Route path="favorites" element={<Navigate to="/dashboard/spaces/:spaceId" replace />} />
               <Route path="tasks" element={<Tasks />} />
               <Route path="board" element={<Tasks view="board" />} />
               <Route path="table_view" element={<Tasks view="table" />} />
