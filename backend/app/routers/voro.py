@@ -93,7 +93,26 @@ async def ask(body: AskIn, user: User = Depends(current_user), db: AsyncSession 
         pass  # basic access to agents on free; advanced_agents gates depth via model budget below
     context_text, meta = await build_context(db, user, body.space_id)
     if not settings.openai_api_key:
-        raise ApiError(503, "AI_NOT_CONFIGURED", "Voro's model provider is not configured. Set OPENAI_API_KEY in the backend environment.", {"provider": "openai", "model": settings.openai_model})
+        from ..ai import ai_available, ai_provider, emergent_reply
+        if not ai_available():
+            raise ApiError(503, "AI_NOT_CONFIGURED", "Voro's model provider is not configured. Add an OpenAI key, or the Emergent universal key.", {"provider": "none", "model": settings.openai_model})
+        # Emergent universal key path (text reply, tools proposed by native provider only)
+        await consume(db, user, "ai_requests", 1, body.space_id, source="voro.ask")
+        db.add(VoroMessage(user_id=user.id, space_id=body.space_id, role="user", content=body.message, agent=body.agent))
+        await db.commit()
+        prior = (await db.execute(select(VoroMessage).where(VoroMessage.user_id == user.id, VoroMessage.space_id == body.space_id).order_by(VoroMessage.created_at.desc()).limit(12))).scalars().all()
+        transcript = [(m.role, m.content) for m in reversed(prior)][:-1]
+        system = agent["system"] + "\n\nCONTEXT (authoritative, scoped to what this user may see):\n" + context_text
+        try:
+            text = await emergent_reply(f"voro-{user.id}-{body.space_id or 'brain'}", system, transcript, body.message)
+        except Exception as exc:  # noqa: BLE001
+            await refund(db, user, "ai_requests", 1)
+            await db.commit()
+            raise ApiError(502, "AI_PROVIDER_ERROR", "Voro could not reach its model provider. Please retry.", {"reason": str(exc)[:200], "provider": ai_provider()})
+        reply = VoroMessage(user_id=user.id, space_id=body.space_id, role="assistant", content=text, agent=body.agent, actions=[])
+        db.add(reply)
+        await db.commit()
+        return {"message": dump(reply), "actions": [], "context": meta, "usage": (await entitlements(db, user))["usage"]}
     await consume(db, user, "ai_requests", 1, body.space_id, source="voro.ask")
     db.add(VoroMessage(user_id=user.id, space_id=body.space_id, role="user", content=body.message, agent=body.agent))
     await db.commit()

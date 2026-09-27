@@ -16,6 +16,7 @@ import Agents from './pages/Agents';
 import Workflows from './pages/Workflows';
 import VoroAI from './pages/VoroAI';
 import Integrations from './pages/Integrations';
+import Favorites from './pages/Favorites';
 import SearchPage from './pages/SearchPage';
 import Settings from './pages/Settings';
 import InboxPage from './pages/InboxPage';

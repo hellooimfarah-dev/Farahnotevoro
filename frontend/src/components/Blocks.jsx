@@ -8,7 +8,12 @@ import TaskViewBlock from './TaskViews';
 export const BLOCK_TYPES = [
   ['heading', 'Heading', 'heading', 'Section title'],
   ['text', 'Text', 'type', 'Plain paragraph'],
+  ['todo', 'To-do', 'check-square', 'Checkable task item'],
   ['callout', 'Callout', 'lightbulb', 'Highlighted note'],
+  ['quote', 'Quote', 'quote', 'Emphasised quote'],
+  ['code', 'Code', 'code', 'Monospaced code block'],
+  ['image', 'Image', 'image', 'Embed an image by URL'],
+  ['bookmark', 'Bookmark', 'link', 'A link to any URL'],
   ['view', 'Task View', 'kanban', 'Board · Table · Timeline · Calendar on your tasks'],
   ['divider', 'Divider', 'minus', 'Visual separator'],
 ];
@@ -20,6 +25,11 @@ export function newBlock(type) {
   const base = { id: uid(), type };
   if (type === 'heading') return { ...base, text: 'New heading', level: 2 };
   if (type === 'text') return { ...base, text: '' };
+  if (type === 'todo') return { ...base, text: '', done: false };
+  if (type === 'quote') return { ...base, text: '' };
+  if (type === 'code') return { ...base, text: '' };
+  if (type === 'image') return { ...base, url: '' };
+  if (type === 'bookmark') return { ...base, url: '', title: '' };
   if (type === 'callout') return { ...base, text: 'Important note…', icon: 'lightbulb' };
   if (type === 'view') return { ...base, title: 'Tasks', mode: 'board', projectId: null };
   return base; // divider
@@ -66,6 +76,26 @@ function BlockBody({ block, spaceId, update }) {
     );
   }
   if (block.type === 'view') return <ViewBlock block={block} spaceId={spaceId} update={update} />;
+  if (block.type === 'todo') {
+    return (
+      <div className="flex items-start gap-2.5" data-testid="block-todo">
+        <button onClick={() => update({ done: !block.done })} className={`mt-1 w-4 h-4 rounded border grid place-items-center shrink-0 ${block.done ? 'bg-[var(--nv-green)] border-[var(--nv-green)]' : 'border-[var(--nv-border)]'}`}>{block.done && <Icon name="check" size={11} className="text-white" />}</button>
+        <textarea value={block.text} onChange={(e) => update({ text: e.target.value })} rows={1} placeholder="To-do" className={`w-full bg-transparent outline-none resize-none text-[14px] leading-relaxed ${block.done ? 'line-through nv-faint' : ''}`} onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }} />
+      </div>
+    );
+  }
+  if (block.type === 'quote') return <div className="border-l-2 border-[var(--nv-text)] pl-3"><textarea value={block.text} onChange={(e) => update({ text: e.target.value })} rows={1} placeholder="Quote" className="w-full bg-transparent outline-none resize-none text-[15px] italic leading-relaxed nv-muted" data-testid="block-quote" onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }} /></div>;
+  if (block.type === 'code') return <textarea value={block.text} onChange={(e) => update({ text: e.target.value })} rows={2} placeholder="// code" spellCheck={false} className="w-full rounded-lg p-3 outline-none resize-none text-[12.5px] font-mono leading-relaxed" style={{ background: '#08080a', color: '#e8e6f5' }} data-testid="block-code" onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }} />;
+  if (block.type === 'image') {
+    return block.url
+      ? <div className="relative group/img"><img src={block.url} alt="" className="rounded-lg max-h-[420px] w-auto border border-[var(--nv-border-soft)]" onError={(e) => { e.target.style.display = 'none'; }} /><button onClick={() => update({ url: '' })} className="absolute top-2 right-2 nv-btn nv-btn-soft nv-btn-sm opacity-0 group-hover/img:opacity-100"><Icon name="pencil" size={12} /></button></div>
+      : <div className="nv-card-2 p-3 flex items-center gap-2"><Icon name="image" size={16} className="nv-faint" /><input value={block.url} onChange={(e) => update({ url: e.target.value })} placeholder="Paste image URL…" className="flex-1 bg-transparent outline-none text-[13px]" data-testid="block-image" /></div>;
+  }
+  if (block.type === 'bookmark') {
+    return block.url
+      ? <a href={block.url} target="_blank" rel="noreferrer" className="nv-card-2 p-3 flex items-center gap-3 hover:border-[var(--nv-border)] transition-colors" data-testid="block-bookmark"><Icon name="link" size={16} className="nv-muted" /><div className="min-w-0"><div className="text-[13px] font-semibold truncate">{block.title || block.url}</div><div className="text-[11px] nv-faint truncate">{block.url}</div></div><Icon name="external-link" size={13} className="ml-auto nv-faint" /></a>
+      : <div className="nv-card-2 p-3 flex items-center gap-2"><Icon name="link" size={16} className="nv-faint" /><input value={block.url} onChange={(e) => update({ url: e.target.value })} placeholder="Paste a URL…" className="flex-1 bg-transparent outline-none text-[13px]" data-testid="block-bookmark-input" /></div>;
+  }
   // text
   return <textarea value={block.text} onChange={(e) => update({ text: e.target.value })} rows={1} placeholder="Type something…  press the + on the left to add blocks" className="w-full bg-transparent outline-none resize-none text-[14px] leading-relaxed nv-autosize" data-testid="block-text" onInput={(e) => { e.target.style.height = 'auto'; e.target.style.height = e.target.scrollHeight + 'px'; }} />;
 }

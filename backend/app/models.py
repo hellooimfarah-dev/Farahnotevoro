@@ -415,3 +415,53 @@ class IdempotencyKey(Base, IdMixin, TimestampMixin):
     key: Mapped[str] = mapped_column(String(120), nullable=False)
     response: Mapped[dict] = mapped_column(J, default=dict)
     status_code: Mapped[int] = mapped_column(Integer, default=200)
+
+
+
+class Agent(Base, IdMixin, TimestampMixin):
+    __tablename__ = "agents"
+    space_id: Mapped[str] = mapped_column(ForeignKey("spaces.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name: Mapped[str] = mapped_column(String(160), nullable=False, default="New Agent")
+    description: Mapped[str] = mapped_column(Text, default="")
+    icon: Mapped[str] = mapped_column(String(50), default="bot")
+    instructions: Mapped[str] = mapped_column(Text, default="")
+    config: Mapped[dict] = mapped_column(J, default=dict)   # model, temperature, knowledge, tools, permissions, schedule
+    status: Mapped[str] = mapped_column(String(20), default="active")
+    last_run_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
+
+class AgentRun(Base, IdMixin, TimestampMixin):
+    __tablename__ = "agent_runs"
+    agent_id: Mapped[str] = mapped_column(ForeignKey("agents.id", ondelete="CASCADE"), nullable=False, index=True)
+    space_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    input: Mapped[str] = mapped_column(Text, default="")
+    output: Mapped[str] = mapped_column(Text, default="")
+    status: Mapped[str] = mapped_column(String(20), default="completed")
+    meta: Mapped[dict] = mapped_column(J, default=dict)
+
+
+class Workflow(Base, IdMixin, TimestampMixin):
+    __tablename__ = "workflows"
+    space_id: Mapped[str] = mapped_column(ForeignKey("spaces.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_by: Mapped[str] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name: Mapped[str] = mapped_column(String(160), nullable=False, default="New Workflow")
+    description: Mapped[str] = mapped_column(Text, default="")
+    icon: Mapped[str] = mapped_column(String(50), default="workflow")
+    trigger: Mapped[dict] = mapped_column(J, default=dict)   # {type, label}
+    nodes: Mapped[list] = mapped_column(J, default=list)     # [{id,type,label,config}]
+    enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    stats: Mapped[dict] = mapped_column(J, default=dict)     # {runs, success, failed}
+    last_run_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True))
+
+
+class WorkflowRun(Base, IdMixin, TimestampMixin):
+    __tablename__ = "workflow_runs"
+    workflow_id: Mapped[str] = mapped_column(ForeignKey("workflows.id", ondelete="CASCADE"), nullable=False, index=True)
+    space_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), default="success")
+    logs: Mapped[list] = mapped_column(J, default=list)

@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { api } from '../lib/api';
 import { Icon } from '../lib/icons';
 import { useActiveSpace } from '../lib/spaces';
 
@@ -13,8 +16,30 @@ const INCLUDES = [['file-text', 'Pages', '5+ pages'], ['database', 'Database', '
 
 export default function AppBuilder() {
   const { active } = useActiveSpace();
+  const nav = useNavigate();
+  const qc = useQueryClient();
   const [prompt, setPrompt] = useState('Build a project management app with projects, tasks, team members, deadlines, Kanban, timeline, and overdue notifications.');
-  const build = () => toast('Connect an AI key in Settings to generate your app.', { description: 'App Builder generation runs on your configured model.' });
+  const [building, setBuilding] = useState(false);
+  const build = async () => {
+    if (!active?.id || building) return;
+    setBuilding(true);
+    try {
+      const title = prompt.split(/[.\n]/)[0].replace(/^build (a|an|me a)?\s*/i, '').trim().slice(0, 60) || 'New App';
+      const blocks = [
+        { id: 'b1', type: 'heading', text: title.charAt(0).toUpperCase() + title.slice(1), level: 1 },
+        { id: 'b2', type: 'callout', text: prompt, icon: 'sparkles' },
+        { id: 'b3', type: 'heading', text: 'Work Board', level: 2 },
+        { id: 'b4', type: 'view', title: 'Tasks', mode: 'board', projectId: null },
+        { id: 'b5', type: 'heading', text: 'Timeline', level: 2 },
+        { id: 'b6', type: 'view', title: 'Schedule', mode: 'timeline', projectId: null },
+      ];
+      const { data } = await api.post(`/spaces/${active.id}/pages`, { title: title.charAt(0).toUpperCase() + title.slice(1), icon: 'layout-grid', content: { v: 1, description: prompt, blocks } });
+      qc.invalidateQueries({ queryKey: ['pages-tree', active.id] });
+      toast.success('App created as a live page', { description: 'Data, board and timeline are wired to your Space tasks.' });
+      nav(`/dashboard/pages/${data.id}`);
+    } catch { toast.error('Could not build the app'); }
+    finally { setBuilding(false); }
+  };
   return (
     <div className="min-h-full px-6 py-10 fade-up" data-testid="app-builder">
       <div className="max-w-3xl mx-auto text-center">
@@ -29,7 +54,7 @@ export default function AppBuilder() {
             <button className="nv-chip nv-btn-sm"><Icon name="database" size={13} /> Connect data</button>
             <button className="nv-chip nv-btn-sm"><Icon name="blocks" size={13} /> Add integrations</button>
             <button className="nv-chip nv-btn-sm"><Icon name="cpu" size={13} /> Model</button>
-            <button onClick={build} className="nv-btn nv-btn-primary ml-auto" data-testid="build-app"><Icon name="sparkles" size={15} /> Build app</button>
+            <button onClick={build} disabled={building} className="nv-btn nv-btn-primary ml-auto" data-testid="build-app"><Icon name={building ? 'loader-2' : 'sparkles'} size={15} className={building ? 'spin' : ''} /> {building ? 'Building…' : 'Build app'}</button>
           </div>
         </div>
 

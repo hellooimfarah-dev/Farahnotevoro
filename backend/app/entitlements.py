@@ -104,21 +104,25 @@ async def consume(db: AsyncSession, user: User, resource: str, amount: int = 1, 
         if dup:
             return ent
     await db.execute(text("INSERT INTO usage_counters (id, user_id, resource_type, period, amount) VALUES (gen_random_uuid()::text, :u, :r, :p, 0) ON CONFLICT (user_id, resource_type, period) DO NOTHING"),
-                     {"u": user.id, "r": resource, "p": period})
-    row = await db.execute(text("UPDATE usage_counters SET amount = amount + :n WHERE user_id=:u AND resource_type=:r AND period=:p AND amount + :n <= :lim RETURNING amount"),
-                           {"n": amount, "u": user.id, "r": resource, "p": period, "lim": limit})
-    updated = row.scalar_one_or_none()
-    if updated is None:
-        current = (await db.execute(text("SELECT amount FROM usage_counters WHERE user_id=:u AND resource_type=:r AND period=:p"), {"u": user.id, "r": resource, "p": period})).scalar_one_or_none() or 0
+                     {"u": user.id, "r": resource, "p": period}) if db.bind.dialect.name == "postgresql" else None
+    counter = (await db.execute(select(UsageCounter).where(UsageCounter.user_id == user.id, UsageCounter.resource_type == resource, UsageCounter.period == period))).scalar_one_or_none()
+    if counter is None:
+        counter = UsageCounter(user_id=user.id, resource_type=resource, period=period, amount=0)
+        db.add(counter)
+        await db.flush()
+    if isinstance(limit, (int, float)) and limit >= 0 and counter.amount + amount > limit:
+        current = counter.amount
         await db.rollback()
         raise ApiError(429, "LIMIT_REACHED", f"You have reached your {resource.replace('_', ' ')} limit for this period.",
                        {"resource": resource, "current": current, "limit": limit, "unit": UNITS[resource], "resets_at": period_reset(),
                         "plan": ent["plan"], "upgrade": "/settings/billing" if ent["plan"] != "enterprise" else None})
+    counter.amount += amount
     db.add(UsageRecord(user_id=user.id, space_id=space_id, resource_type=resource, amount=amount, unit=UNITS[resource], period=period, source=source, idempotency_key=idempotency_key, meta=meta or {}))
     return ent
 
 
 async def refund(db: AsyncSession, user: User, resource: str, amount: int = 1):
     """Failed operations must not consume usage."""
-    await db.execute(text("UPDATE usage_counters SET amount = GREATEST(amount - :n, 0) WHERE user_id=:u AND resource_type=:r AND period=:p"),
-                     {"n": amount, "u": user.id, "r": resource, "p": period_key()})
+    counter = (await db.execute(select(UsageCounter).where(UsageCounter.user_id == user.id, UsageCounter.resource_type == resource, UsageCounter.period == period_key()))).scalar_one_or_none()
+    if counter:
+        counter.amount = max(counter.amount - amount, 0)
