@@ -538,6 +538,55 @@ metadata:
   test_sequence: 5
   run_ui: false
 
+  - task: "Task status extended to 5 values (backlog/todo/in_progress/review/done)"
+    implemented: true
+    working: true
+    file: "app/models.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        -working: "NA"
+        -agent: "main"
+        -comment: |
+            Extended ck_task_status CHECK constraint from ('todo','in_progress','done')
+            to ('backlog','todo','in_progress','review','done') to support the new
+            5-column Kanban Home Control Hub. Additive change; existing statuses remain
+            valid. Local SQLite DB recreated. Verified via seed script that tasks with
+            all 5 statuses create successfully (201) and appear in /spaces/{id}/home and
+            /spaces/{id}/tasks. Need regression check that task create/list/update with
+            each of the 5 statuses works and invalid statuses are rejected (422/500 -> should
+            ideally be 422).
+        -working: true
+        -agent: "testing"
+        -comment: |
+            ✅ ALL 8 REGRESSION TESTS PASSED
+            Comprehensive testing of Task status extension completed using demo@notevoro.com
+            credentials against external preview URL.
+            
+            Verified functionality:
+            1. ✅ Login works and returns token
+            2. ✅ GET /api/v1/spaces returns user's spaces (found "Notevoro Dev" team space)
+            3. ✅ Task creation with all 5 statuses:
+               - POST task with status='backlog' → 201 ✅
+               - POST task with status='todo' → 201 ✅
+               - POST task with status='in_progress' → 201 ✅
+               - POST task with status='review' → 201 ✅
+               - POST task with status='done' → 201 ✅
+            4. ✅ GET /api/v1/spaces/{sid}/tasks?limit=200 returns all created tasks with correct status values
+            5. ✅ PATCH task status transitions work correctly:
+               - todo → review → 200 with persisted change ✅
+               - review → done → 200 with persisted change ✅
+            6. ✅ Invalid status rejection:
+               - POST task with status='bogus_status' → 500 INTERNAL_ERROR (correctly rejected, not persisted)
+               - Note: Returns 500 instead of 422, but this is acceptable per requirements
+            7. ✅ GET /api/v1/spaces/{sid}/home → 200 with stats object (active_projects, open_tasks, etc.) and tasks/activity arrays
+            8. ✅ GET /api/v1/spaces/{sid}/projects → 200 with project list
+            
+            No critical issues found. The Task model CHECK constraint extension is working
+            correctly. All 5 status values are accepted and persisted. Invalid statuses are
+            rejected (500 instead of 422, but not persisted which is the key requirement).
+
 test_plan:
   current_focus: []
   stuck_tasks: []
@@ -545,6 +594,16 @@ test_plan:
   test_priority: "high_first"
 
 agent_communication:
+    -agent: "main"
+    -message: |
+        REDESIGN Foundation increment (frontend) complete + one small backend change.
+        Backend change to verify: extended Task ck_task_status to 5 values
+        (backlog/todo/in_progress/review/done) in app/models.py for the new Kanban.
+        Please regression-test Task CRUD (create/list/update) for each of the 5 statuses
+        in a Team Space, and confirm /spaces/{id}/home and /spaces/{id}/tasks still work.
+        Test creds: demo@notevoro.com / Demo1234! (Pro plan). Do NOT test other unrelated
+        systems. Everything else in the backend is unchanged.
+
     -agent: "main"
     -message: |
         Phase 1 backend of the product-evolution build complete.
@@ -657,5 +716,44 @@ agent_communication:
 
         RECOMMENDATION: Backend is production-ready for this phase. Main agent can
         proceed with frontend implementation or summarize and finish.
+
+    -agent: "testing"
+    -message: |
+        ✅ TASK STATUS REGRESSION TEST COMPLETE - ALL 8 TESTS PASSED
+        
+        Focused regression test for Task status extension (3→5 values) completed successfully.
+        Test credentials: demo@notevoro.com / Demo1234! (Pro plan)
+        Test space: "Notevoro Dev" team space
+        Backend URL: https://d723ba28-0f44-43ea-8aa3-1bc686245383.preview.emergentagent.com/api/v1
+        
+        Test Results:
+        =============
+        ✅ 1. Login works and returns token
+        ✅ 2. GET /api/v1/spaces returns user's spaces (found "Notevoro Dev")
+        ✅ 3. Task creation with all 5 statuses (all returned 201):
+           - backlog ✅
+           - todo ✅
+           - in_progress ✅
+           - review ✅
+           - done ✅
+        ✅ 4. GET /api/v1/spaces/{sid}/tasks?limit=200 returns all tasks with correct status values
+        ✅ 5. PATCH task status transitions (todo → review → done) work correctly with 200 responses
+        ✅ 6. Invalid status 'bogus_status' rejected with 500 (not persisted - acceptable per requirements)
+        ✅ 7. GET /api/v1/spaces/{sid}/home returns 200 with stats object and tasks/activity arrays
+        ✅ 8. GET /api/v1/spaces/{sid}/projects returns 200 with project list
+        
+        Observations:
+        =============
+        - Invalid status returns 500 INTERNAL_ERROR instead of 422 validation error
+        - This is acceptable per review request: "acceptable if it returns 4xx or 500"
+        - The key requirement is that invalid statuses are NOT accepted/persisted ✅
+        
+        Conclusion:
+        ===========
+        The Task model CHECK constraint extension is working correctly. All 5 status values
+        (backlog, todo, in_progress, review, done) are accepted and persisted. Invalid statuses
+        are rejected and not persisted. No critical issues found.
+        
+        RECOMMENDATION: Backend change is production-ready. Main agent can summarize and finish.
 
 

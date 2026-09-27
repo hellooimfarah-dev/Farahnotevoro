@@ -2,6 +2,20 @@ import { create } from 'zustand';
 import { api } from './api';
 import { getToken } from './auth';
 
+const THEME_KEY = 'nv-theme';
+const SPACE_KEY = 'nv-active-space';
+const initialTheme = (() => {
+  try { return localStorage.getItem(THEME_KEY) || 'dark'; } catch { return 'dark'; }
+})();
+export function applyTheme(theme) {
+  try {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem(THEME_KEY, theme);
+  } catch { /* ignore */ }
+}
+applyTheme(initialTheme);
+
 export const useApp = create((set, get) => ({
   user: null,
   entitlements: null,
@@ -12,6 +26,11 @@ export const useApp = create((set, get) => ({
   unread: 0,
   wsStatus: 'idle',
   voroOpen: true,
+  theme: initialTheme,
+  activeSpaceId: (() => { try { return localStorage.getItem(SPACE_KEY) || null; } catch { return null; } })(),
+  setTheme: (theme) => { applyTheme(theme); set({ theme }); },
+  toggleTheme: () => { const t = get().theme === 'dark' ? 'light' : 'dark'; applyTheme(t); set({ theme: t }); },
+  setActiveSpaceId: (id) => { try { if (id) localStorage.setItem(SPACE_KEY, id); } catch { /* ignore */ } set({ activeSpaceId: id }); },
   setOnline: (online) => set({ online }),
   setVoroOpen: (voroOpen) => set({ voroOpen }),
   setWsStatus: (wsStatus) => set({ wsStatus }),

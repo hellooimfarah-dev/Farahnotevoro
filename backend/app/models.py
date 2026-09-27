@@ -135,7 +135,7 @@ class Project(Base, IdMixin, TimestampMixin, SpaceScoped):
 
 class Task(Base, IdMixin, TimestampMixin, SpaceScoped):
     __tablename__ = "tasks"
-    __table_args__ = (CheckConstraint("status IN ('todo','in_progress','done')", name="ck_task_status"),
+    __table_args__ = (CheckConstraint("status IN ('backlog','todo','in_progress','review','done')", name="ck_task_status"),
                       Index("ix_task_space_status", "space_id", "status"))
     title: Mapped[str] = mapped_column(String(300), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text)
