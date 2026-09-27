@@ -37,7 +37,7 @@ function TaskCard({ task, projects, onOpen }) {
       <div className="text-[12.5px] font-semibold leading-snug mb-2 line-clamp-2">{task.title}</div>
       <div className="flex items-center justify-between">
         {proj ? <span className={`nv-tag tone-${proj.color || 'slate'}`}>{proj.name}</span> : <span className="nv-tag tone-slate">General</span>}
-        <span className={`w-1.5 h-1.5 rounded-full bg-[var(--nv-${priorityTone(task.priority)})]`} title={task.priority} />
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: `var(--nv-${priorityTone(task.priority)})` }} title={task.priority} />
       </div>
     </button>
   );
@@ -59,7 +59,7 @@ function ProjectBoard({ tasks, projects, sid, nav }) {
         {COLUMNS.map(([key, label, tone]) => (
           <div key={key} className="min-w-0">
             <div className="flex items-center gap-2 mb-2 px-0.5">
-              <span className={`w-2 h-2 rounded-full bg-[var(--nv-${tone})]`} />
+              <span className="w-2 h-2 rounded-full" style={{ background: `var(--nv-${tone})` }} />
               <span className="text-[12px] font-bold">{label}</span>
               <span className="text-[11px] nv-faint font-semibold ml-auto">{grouped[key].length}</span>
             </div>
@@ -87,7 +87,7 @@ function Timeline({ projects }) {
     const width = Math.max(6, (e.diff(s, 'day') / range.days) * 100);
     return (
       <div key={p.id} className="flex items-center gap-3 h-9">
-        <div className="w-24 shrink-0 flex items-center gap-1.5 text-[12px] font-medium truncate"><span className={`w-1.5 h-1.5 rounded-full bg-[var(--nv-${p.color || 'slate'})]`} />{p.name}</div>
+        <div className="w-24 shrink-0 flex items-center gap-1.5 text-[12px] font-medium truncate"><span className="w-1.5 h-1.5 rounded-full" style={{ background: `var(--nv-${p.color || 'slate'})` }} />{p.name}</div>
         <div className="flex-1 relative h-full flex items-center">
           <div className="absolute h-2 rounded-full" style={{ left: `${left}%`, width: `${Math.min(width, 100 - left)}%`, background: `var(--nv-${p.color || 'slate'})`, opacity: 0.85 }} />
         </div>
@@ -174,7 +174,7 @@ function ProgressDonut({ tasks }) {
         </div>
         <div className="flex-1 space-y-1.5 text-[12px]">
           {[['Done', 'green', counts.done], ['In Progress', 'amber', counts.in_progress], ['Todo', 'blue', counts.todo], ['Backlog', 'slate', counts.backlog]].map(([l, tone, n]) => (
-            <div key={l} className="flex items-center gap-2"><span className={`w-2 h-2 rounded-full bg-[var(--nv-${tone})]`} /><span className="nv-muted flex-1">{l}</span><span className="font-bold">{n}</span></div>
+            <div key={l} className="flex items-center gap-2"><span className="w-2 h-2 rounded-full" style={{ background: `var(--nv-${tone})` }} /><span className="nv-muted flex-1">{l}</span><span className="font-bold">{n}</span></div>
           ))}
         </div>
       </div>

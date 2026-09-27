@@ -59,7 +59,7 @@ function Board({ tasks, projects, m }) {
       {COLUMNS.map(([key, label, tone]) => (
         <div key={key} className="min-w-0 rounded-xl p-1.5 transition-colors" onDragOver={(e) => e.preventDefault()} onDrop={() => drop(key)}>
           <div className="flex items-center gap-2 mb-2 px-1">
-            <span className={`w-2 h-2 rounded-full bg-[var(--nv-${tone})]`} /><span className="text-[12px] font-bold">{label}</span>
+            <span className="w-2 h-2 rounded-full" style={{ background: `var(--nv-${tone})` }} /><span className="text-[12px] font-bold">{label}</span>
             <span className="text-[11px] nv-faint font-semibold ml-auto">{grouped[key].length}</span>
           </div>
           <div className="space-y-2 min-h-[40px]">
@@ -71,7 +71,7 @@ function Board({ tasks, projects, m }) {
                   <div className="text-[12.5px] font-semibold leading-snug mb-2">{t.title}</div>
                   <div className="flex items-center justify-between gap-2">
                     {proj ? <span className={`nv-tag tone-${proj.color || 'slate'}`}>{proj.name}</span> : <span className="nv-tag tone-slate">General</span>}
-                    <span className={`w-1.5 h-1.5 rounded-full bg-[var(--nv-${priorityTone(t.priority)})]`} title={t.priority} />
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: `var(--nv-${priorityTone(t.priority)})` }} title={t.priority} />
                   </div>
                 </div>
               );
