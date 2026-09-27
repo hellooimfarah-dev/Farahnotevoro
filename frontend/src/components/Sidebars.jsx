@@ -64,7 +64,7 @@ export function SpaceSidebar() {
   const sid = active?.id;
   const { data: tree } = useQuery({ queryKey: ['pages-tree', sid], queryFn: () => api.get(`/spaces/${sid}/pages/tree`).then((r) => r.data).catch(() => []), enabled: !!sid });
   const flat = useMemo(() => flattenPages(Array.isArray(tree) ? tree : (tree?.items || [])), [tree]);
-  const addPage = async () => { if (!sid) return; try { const { data } = await api.post(`/spaces/${sid}/pages`, { title: 'Untitled' }); nav(`/dashboard/spaces/${sid}/pages/${data.id}`); } catch { /* ignore */ } };
+  const addPage = async () => { if (!sid) return; try { const { data } = await api.post(`/spaces/${sid}/pages`, { title: 'Untitled' }); nav(`/dashboard/pages/${data.id}`); } catch { /* ignore */ } };
   return (
     <>
       <SidebarHeader icon={active?.icon || 'sparkles'} title={active?.name || 'Notevoro'} onClick={() => nav('/dashboard')} />
@@ -77,7 +77,7 @@ export function SpaceSidebar() {
         <Section label="Pages">
           {flat.length === 0 && <div className="px-3 py-1.5 text-[12px] nv-faint">No pages yet</div>}
           {flat.map(({ page, depth }) => (
-            <NavLink key={page.id} to={`/dashboard/spaces/${sid}/pages/${page.id}`} className="nav-item h-8 min-w-0" style={{ paddingLeft: 12 + depth * 14 }} data-testid={`page-${page.id}`}>
+            <NavLink key={page.id} to={`/dashboard/pages/${page.id}`} className="nav-item h-8 min-w-0" style={{ paddingLeft: 12 + depth * 14 }} data-testid={`page-${page.id}`}>
               <Icon name={page.icon || 'file-text'} size={15} /><span className="truncate text-[13px]">{page.title || 'Untitled'}</span>
             </NavLink>
           ))}

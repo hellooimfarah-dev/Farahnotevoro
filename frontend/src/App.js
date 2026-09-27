@@ -86,6 +86,7 @@ export default function App() {
           <Route element={<Protected />}>
             <Route path="/dashboard" element={<Shell />}>
               <Route index element={<HomeHub />} />
+              <Route path="pages/:pageId" element={<Pages />} />
               <Route path="agents" element={<Agents />} />
               <Route path="app-builder" element={<AppBuilder />} />
               <Route path="workflows" element={<Workflows />} />
